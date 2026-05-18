@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>週刊おみくじ</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f7f7f7;
+            text-align: center;
+            padding: 50px 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #d9534f;
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+        button {
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #c9302c;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 30px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            min-height: 40px;
+        }
+        .message {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>週刊おみくじ</h1>
+    <p>運試しは1週間に1回だけです。</p>
+    
+    <button id="draw-btn" onclick="drawOmikuji()">おみくじを引く</button>
+    
+    <div id="result"></div>
+    <div id="message" class="message"></div>
+</div>
+
+<script>
+    // おみくじの結果リスト（神歌なしのシンプルな運勢）
+    const fortunes = [
+        "大吉：最高の一週間になります！積極的な行動が吉。",
+        "吉：良い波が来ています。何事も誠実にこなしましょう。",
+        "中吉：全体的に安定しています。体調管理を大切に。",
+        "小吉：小さな幸運が舞い込む予感。焦らず進みましょう。",
+        "末吉：一歩ずつ進めば成果が出ます。準備を怠らずに。",
+        "凶：無理は禁物。今週は自分を労わる週にしましょう。"
+    ];
+
+    // 1週間（ミリ秒換算）： 7日 × 24時間 × 60分 × 60秒 × 1000ミリ秒
+    const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+    // ページ読み込み時に制限をチェック
+    window.onload = function() {
+        checkLimit();
+    };
+
+    // 「直近の月曜日 0:00」のタイムスタンプを取得する関数
+    function getLatestMondayStart() {
+        const now = new Date();
+        const currentDay = now.getDay(); // 0:日, 1:月, 2:火, ... 6:土
+        
+        // 今週の月曜日からの経過日数を計算
+        // 日曜日(0)の場合は前週の月曜日まで戻すため 6日前、それ以外は (currentDay - 1) 日前
+        const daysSinceMonday = currentDay === 0 ? 6 : currentDay - 1;
+        
+        const latestMonday = new Date(now);
+        latestMonday.setDate(now.getDate() - daysSinceMonday);
+        latestMonday.setHours(0, 0, 0, 0); // 時間を 00:00:00.000 に設定
+        
+        return latestMonday.getTime();
+    }
+
+    function checkLimit() {
+        const lastDraw = localStorage.getItem('lastDrawTime');
+        const drawBtn = document.getElementById('draw-btn');
+        const messageDiv = document.getElementById('message');
+
+        if (lastDraw) {
+            const latestMondayStart = getLatestMondayStart();
+
+            // 前回引いた時間が「直近の月曜日 0:00」よりも後の場合、今週はすでに引いていると判定
+            if (parseInt(lastDraw) >= latestMondayStart) {
+                drawBtn.disabled = true; // ボタンを無効化
+                messageDiv.innerText = "今週のおみくじはすでに引いています。次の月曜日からまたお越しください。";
+            }
+        }
+    }
+
+    function drawOmikuji() {
+        const drawBtn = document.getElementById('draw-btn');
+        const resultDiv = document.getElementById('result');
+        const messageDiv = document.getElementById('message');
+
+        // ランダムで運勢を決定
+        const randomIndex = Math.floor(Math.random() * fortunes.length);
+        const result = fortunes[randomIndex];
+
+        // 画面に結果を表示
+        resultDiv.innerText = result;
+
+        // 現在の日時（タイムスタンプ）をブラウザに保存
+        const now = new Date().getTime();
+        localStorage.setItem('lastDrawTime', now);
+
+        // ボタンを無効化し、メッセージを更新
+        drawBtn.disabled = true;
+        messageDiv.innerText = "おみくじを引きました。次回は1週間後です。";
+    }
+</script>
+
+</body>
+</html>
