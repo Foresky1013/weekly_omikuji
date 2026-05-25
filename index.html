@@ -69,18 +69,119 @@
 </div>
 
 <script>
-    // おみくじの結果リスト（神歌なしのシンプルな運勢）
-    const fortunes = [
-        "大吉：最高の一週間になります！積極的な行動が吉。",
-        "吉：良い波が来ています。何事も誠実にこなしましょう。",
-        "中吉：全体的に安定しています。体調管理を大切に。",
-        "小吉：小さな幸運が舞い込む予感。焦らず進みましょう。",
-        "末吉：一歩ずつ進めば成果が出ます。準備を怠らずに。",
-        "凶：無理は禁物。今週は自分を労わる週にしましょう。"
-    ];
-
-    // 1週間（ミリ秒換算）： 7日 × 24時間 × 60分 × 60秒 × 1000ミリ秒
-    const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+    // 各項目ごとの0〜5点に相当する運勢文のデータ
+    const omikujiData = {
+        negai: {
+            name: "願事",
+            sentences: [
+                "叶い難い。今は時期を待つべし。",
+                "他人の妨げあり。目上の人に相談せよ。",
+                "少しずつ進むが、焦りは禁物。",
+                "人に助けられて叶うことあり。",
+                "思う通りに叶う。油断せぬこと。",
+                "思いのまま。万事順調に進む。"
+            ]
+        },
+        machibito: {
+            name: "待人",
+            sentences: [
+                "来ない。音信（たより）もなし。",
+                "遅れる。期待せずに待つがよい。",
+                "来るが遅い。または手紙あり。",
+                "驚くような形で現れる兆し。",
+                "来る。良い知らせを伴う。",
+                "すぐ来る。連れだってやってくる。"
+            ]
+        },
+        lose: {
+            name: "失物",
+            sentences: [
+                "出ない。諦める方が賢明。",
+                "見つかりにくい。高い所を探せ。",
+                "出るが、手間と時間がかかる。",
+                "近いところにある。身近を探せ。",
+                "出る。すぐに見つかるでしょう。",
+                "すぐに出る。身近な人が知っている。"
+            ]
+        },
+        health: {
+            name: "健康",
+            sentences: [
+                "大いに注意せよ。十分な休息が必要。",
+                "不摂生は禁物。早めの休養を。",
+                "気苦労多し。心身を休めよ。",
+                "普段通り過ごせば問題なし。",
+                "快方に向かう。健康維持に努めよ。",
+                "心身ともに充実。活力に満ち溢れる。"
+            ]
+        },
+        travel: {
+            name: "旅行",
+            sentences: [
+                "見合わせよ。災いあり。",
+                "行かない方が無難。近場なら可。",
+                "急ぐ旅は良くない。計画的に。",
+                "連れがいれば吉。楽しめ。 ",
+                "吉日。遠くへ行くのも良い。",
+                "利あり。素晴らしい出会いあり。"
+            ]
+        },
+        business: {
+            name: "商売",
+            sentences: [
+                "損あり。今はじっと耐える時。",
+                "利益少なし。買い控えが吉。",
+                "売り買いともに、焦れば失敗する。",
+                "少しの利益あり。堅実に進めよ。",
+                "買いに利あり。繁盛する兆し。",
+                "大いに利あり。驚くほどの利益あり。"
+            ]
+        },
+        study: {
+            name: "学問",
+            sentences: [
+                "危うし。全力を尽くさねば落第。",
+                "努力不足。もっと集中せよ。",
+                "基礎を固めよ。焦りは禁物。",
+                "努力が実を結ぶ。この調子で。",
+                "安心して進め。実力以上の力が出る。",
+                "試験も研究も万全。自信を持て。"
+            ]
+        },
+        conflict: {
+            name: "争事",
+            sentences: [
+                "負ける。今は争いを避けるべし。",
+                "勝ち目薄し。引き下がるのが吉。",
+                "長引く恐れあり。和解の道を。",
+                "他人の仲介によって収まる。",
+                "勝つ。しかし我が張りに注意。",
+                "完全に勝つ。恐れることなし。"
+            ]
+        },
+        love: {
+            name: "恋愛",
+            sentences: [
+                "実り難し。誠意が通じぬ時。",
+                "空回りしがち。一歩引いて見よ。",
+                "思いやりを大切に。進展は遅い。",
+                "誠意を持てば良い方向へ向かう。",
+                "良い縁あり。積極的にアプローチを。",
+                "大いに大吉。運命の出会いあり。"
+            ]
+        },
+        move: {
+            name: "転居",
+            sentences: [
+                "悪し。見合わせるのが賢明。",
+                "時を待て。急ぐと災いあり。",
+                "少し待て。方角をよく確かめよ。",
+                "普通。移っても差し支えなし。",
+                "吉。良い物件や環境に出会える。",
+                "大いに吉。速やかに行うがよし。"
+            ]
+        }
+    };
 
     // ページ読み込み時に制限をチェック
     window.onload = function() {
@@ -90,15 +191,12 @@
     // 「直近の月曜日 0:00」のタイムスタンプを取得する関数
     function getLatestMondayStart() {
         const now = new Date();
-        const currentDay = now.getDay(); // 0:日, 1:月, 2:火, ... 6:土
-        
-        // 今週の月曜日からの経過日数を計算
-        // 日曜日(0)の場合は前週の月曜日まで戻すため 6日前、それ以外は (currentDay - 1) 日前
+        const currentDay = now.getDay(); // 0:日, 1:月, ... 6:土
         const daysSinceMonday = currentDay === 0 ? 6 : currentDay - 1;
         
         const latestMonday = new Date(now);
         latestMonday.setDate(now.getDate() - daysSinceMonday);
-        latestMonday.setHours(0, 0, 0, 0); // 時間を 00:00:00.000 に設定
+        latestMonday.setHours(0, 0, 0, 0);
         
         return latestMonday.getTime();
     }
@@ -110,11 +208,9 @@
 
         if (lastDraw) {
             const latestMondayStart = getLatestMondayStart();
-
-            // 前回引いた時間が「直近の月曜日 0:00」よりも後の場合、今週はすでに引いていると判定
             if (parseInt(lastDraw) >= latestMondayStart) {
-                drawBtn.disabled = true; // ボタンを無効化
-                messageDiv.innerText = "今週のおみくじはすでに引いています。次の月曜日からまたお越しください。";
+                drawBtn.disabled = true;
+                messageDiv.innerText = "今週のおみくじはすでに引いています。次の月曜日からお越しください。";
             }
         }
     }
@@ -124,20 +220,48 @@
         const resultDiv = document.getElementById('result');
         const messageDiv = document.getElementById('message');
 
-        // ランダムで運勢を決定
-        const randomIndex = Math.floor(Math.random() * fortunes.length);
-        const result = fortunes[randomIndex];
+        let totalScore = 0;
+        let detailsHtml = "<h3>【今週の運勢】</h3><ul style='text-align:left; display:inline-block; list-style:none; padding:0;'>";
 
-        // 画面に結果を表示
-        resultDiv.innerText = result;
+        // 10個の項目をループ処理
+        for (const key in omikujiData) {
+            const item = omikujiData[key];
+            const score = Math.floor(Math.random() * 6); // 0〜5のランダムな点数
+            totalScore += score; // 合計点に加算
 
-        // 現在の日時（タイムスタンプ）をブラウザに保存
+            // 各項目のテキストを組み立て
+            detailsHtml += `<li><strong>【${item.name}】</strong> ${item.sentences[score]}</li>`;
+        }
+        detailsHtml += "</ul>";
+
+        // 合計点（最大50点）から総合運勢を判定
+        let generalFortune = "";
+        if (totalScore >= 42) {
+            generalFortune = "大吉";
+        } else if (totalScore >= 34) {
+            generalFortune = "吉";
+        } else if (totalScore >= 25) {
+            generalFortune = "中吉";
+        } else if (totalScore >= 17) {
+            generalFortune = "小吉";
+        } else if (totalScore >= 9) {
+            generalFortune = "末吉";
+        } else {
+            generalFortune = "凶";
+        }
+
+        // 画面に結果を表示（総合運勢 各詳細）
+        resultDiv.innerHTML = `
+            <div style="font-size: 28px; color: #d9534f; margin-bottom: 10px;">${generalFortune}</div>
+            ${detailsHtml}
+        `;
+
+        // 現在の日時をブラウザに保存してロック
         const now = new Date().getTime();
         localStorage.setItem('lastDrawTime', now);
 
-        // ボタンを無効化し、メッセージを更新
         drawBtn.disabled = true;
-        messageDiv.innerText = "おみくじを引きました。次の月曜日までお待ちください。";
+        messageDiv.innerText = "今週のおみくじを引きました。次の月曜日からお越しください。";
     }
 </script>
 
